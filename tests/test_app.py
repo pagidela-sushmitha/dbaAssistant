@@ -99,7 +99,7 @@ class AppTests(unittest.TestCase):
             app.sidebar.button(key=f"chat_{second_id}").click().run()
             self.assertIn("Second answer", [m.value for m in app.markdown])
             self.assertEqual(app.sidebar.button(key=f"chat_{second_id}").proto.type, "secondary")
-            app.main.button(key="chat_new_chat").click().run()
+            app.sidebar.button(key="new_chat").click().run()
             self.assertEqual(len(app.chat_message), 0)
             self.assertEqual(len(app.session_state["chats"]), 2)
             app.sidebar.button(key=f"chat_{second_id}").click().run()
@@ -114,7 +114,7 @@ class AppTests(unittest.TestCase):
             self.assertEqual(len(app.session_state["chats"]), 0)
             self.assertEqual(ask.call_count, 2)
 
-    def test_main_new_chat_and_clear_history(self):
+    def test_sidebar_new_chat_and_clear_history(self):
         st.cache_resource.clear()
         st.cache_data.clear()
         self.addCleanup(st.cache_resource.clear)
@@ -128,7 +128,8 @@ class AppTests(unittest.TestCase):
                 str(Path(__file__).resolve().parents[1] / "app.py"), default_timeout=15,
             ).run()
             app.chat_input[0].set_value("First question").run()
-            app.main.button(key="main_new_chat").click().run()
+            self.assertFalse(any(b.label == "New chat" for b in app.main.button))
+            app.sidebar.button(key="new_chat").click().run()
             self.assertEqual(len(app.chat_message), 0)
             app.chat_input[0].set_value("Second question").run()
             self.assertEqual(len(app.session_state["chats"]), 2)
