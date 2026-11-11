@@ -1,8 +1,9 @@
 """Construct LangChain clients for Nebius's OpenAI-compatible API."""
 
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-
+# Tracing environment must exist before LangChain imports initialize clients.
 from rag import config
+
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 
 def get_embeddings() -> OpenAIEmbeddings:

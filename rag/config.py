@@ -1,4 +1,4 @@
-"""Load project settings from the environment, with .env as a fallback."""
+"""Load .env before importing LangChain, LangGraph, or their tracing clients."""
 
 import os
 from pathlib import Path
@@ -6,6 +6,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+# Keep this module free of LangChain imports. Entrypoints import it first so
+# tracing settings are available when LangChain/LangSmith initialize.
 load_dotenv(ROOT_DIR / ".env", override=False)
 
 NEBIUS_API_KEY = os.getenv("NEBIUS_API_KEY", "").strip()

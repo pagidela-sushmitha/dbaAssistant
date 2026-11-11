@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from typing import Literal
 
+from rag import config  # Initialize tracing before importing LangChain.
+
 import numpy as np
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -58,7 +60,7 @@ class HybridRetriever:
 
     def _query_vector(self, query: str) -> np.ndarray:
         if query not in self._query_cache:
-            # BM25-only searches do not need a provider connection or API key.
+            # BM25-only searches do not need a provider connection.
             if self._embedding_client is None:
                 from rag.llm import get_embeddings
 

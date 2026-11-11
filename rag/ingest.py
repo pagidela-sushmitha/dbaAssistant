@@ -7,6 +7,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
+from rag import config  # Initialize tracing before importing LangChain.
+
 import numpy as np
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
