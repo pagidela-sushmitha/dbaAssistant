@@ -61,6 +61,7 @@ class PipelineTests(unittest.TestCase):
             "Follow the approved operation. [1] Repeat its validation. [1]",
         )
         self.assertEqual([d["id"] for d in result["docs"]], ["runbook#2", "runbook#3", "runbook#1"])
+        self.assertEqual([d["grade_score"] for d in result["candidates"]], [2, 3, 3])
         self.assertEqual(result["confidence"], "high")
         self.assertEqual(result["citations"], [{
             "n": 1, "title": "Runbook 2", "section": "Recovery",
@@ -182,6 +183,7 @@ class PipelineTests(unittest.TestCase):
             self.assertIn(text, result["answer"])
         self.assertEqual(len(main.calls), 0)
         self.assertEqual(len(fast.calls), 3)
+        self.assertEqual([d["grade_score"] for d in result["candidates"]], [0])
 
     def test_empty_retrieval_preserves_earlier_closest_documents(self):
         result, _, fast, _ = self.run_pipeline([[candidate(1)], []], [grades(0), "new search"])
@@ -198,6 +200,7 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual([d["id"] for d in result["docs"]], ["runbook#1", "runbook#2", "runbook#3"])
         self.assertEqual(result["confidence"], "medium")
         self.assertNotIn("NEVER_SENT_TO_GRADER", fast.calls[0][1][1])
+        self.assertTrue(all(d["grade_score"] is None for d in result["candidates"]))
         self.assertIn("[8]", fast.calls[0][1][1])
 
     def test_invalid_grades_fall_back_instead_of_crashing(self):

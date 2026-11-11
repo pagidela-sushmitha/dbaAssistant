@@ -31,4 +31,4 @@ retrieve → grade (batched LLM rerank) → [generate | rewrite once → retriev
 - [x] Hybrid retriever
 - [x] LangGraph pipeline + CLI
 - [x] 20-question eval + report
-- [ ] Streamlit UI
+- [x] Streamlit UI

@@ -171,11 +171,13 @@ def build_graph(retriever=None, fast_llm=None, llm=None):
             if len(scores) != len(candidates):
                 raise ValueError("Missing candidate grades.")
             order = sorted((n for n in scores if scores[n] >= 2), key=lambda n: (-scores[n], n))[:4]
+            candidates = [{**doc, "grade_score": scores[n]} for n, doc in enumerate(candidates, 1)]
             docs = [{**candidates[n - 1], "grade_score": scores[n]} for n in order]
         except (ValueError, TypeError, KeyError):
             # Retrieval order is fused rank. A fallback cannot claim grade 3.
+            candidates = [{**doc, "grade_score": None} for doc in candidates]
             docs = [{**doc, "grade_score": None} for doc in candidates[:3]]
-        return {"docs": docs}
+        return {"docs": docs, "candidates": candidates}
 
     @timed
     def rewrite(state: State) -> dict:
