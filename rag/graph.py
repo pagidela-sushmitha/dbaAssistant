@@ -2,7 +2,7 @@
 
 import json
 import re
-from functools import lru_cache, wraps
+from functools import wraps
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -14,7 +14,7 @@ from rag import config  # Initialize tracing before importing LangGraph.
 from langgraph.graph import END, START, StateGraph
 
 from rag.prompts import GENERATE_PROMPT, GRADE_PROMPT, GROUNDING_PROMPT, REWRITE_PROMPT
-from rag.retriever import HybridRetriever
+from rag.retriever import get_retriever
 
 
 class QueryInput(TypedDict):
@@ -105,12 +105,6 @@ def timed(node):
     return wrapped
 
 
-@lru_cache(maxsize=1)
-def get_retriever() -> HybridRetriever:
-    return HybridRetriever()
-
-
-@lru_cache(maxsize=2)
 def get_model(fast: bool):
     from rag.llm import get_llm
 
@@ -131,11 +125,13 @@ def route_after_check(state: State) -> str:
 
 def build_graph(retriever=None, fast_llm=None, llm=None):
     """Optional injected clients support offline tests without provider requests."""
-    def call_model(prompt: str, content: str, fast: bool) -> str:
+    def call_model(prompt: str, content: str, fast: bool, max_tokens: int) -> str:
         client = fast_llm if fast else llm
         if client is None:
             client = get_model(fast)
-        return response_text(client.invoke([("system", prompt), ("human", content)]))
+        return response_text(client.invoke(
+            [("system", prompt), ("human", content)], max_tokens=max_tokens,
+        ))
 
     @timed
     def retrieve(state: State) -> dict:
@@ -159,6 +155,7 @@ def build_graph(retriever=None, fast_llm=None, llm=None):
             GRADE_PROMPT,
             f"Question: {state['question']}\n\nExcerpts:\n{sources_text(candidates, limit=700)}",
             fast=True,
+            max_tokens=300,
         )
         try:
             grades = parse_json(raw, list)
@@ -186,6 +183,7 @@ def build_graph(retriever=None, fast_llm=None, llm=None):
             REWRITE_PROMPT,
             f"Question: {state['question']}\nPrevious search: {state['search_query']}",
             fast=True,
+            max_tokens=60,
         )
         # Enforce the prompt's word budget and remove repeated terms even when
         # the model ignores it. Preserve technical tokens and their first spelling.
@@ -203,6 +201,7 @@ def build_graph(retriever=None, fast_llm=None, llm=None):
             GENERATE_PROMPT,
             f"Question: {state['question']}\n\nSources:\n{sources_text(state['docs'])}",
             fast=False,
+            max_tokens=500,
         )
         return {"answer": answer}
 
@@ -213,6 +212,7 @@ def build_graph(retriever=None, fast_llm=None, llm=None):
             f"Question: {state['question']}\n\nSources:\n{sources_text(state['docs'])}\n\n"
             f"Answer to audit:\n{state['answer']}",
             fast=True,
+            max_tokens=150,
         )
         try:
             verdict = parse_json(raw, dict)

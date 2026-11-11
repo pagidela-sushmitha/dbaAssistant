@@ -3,9 +3,12 @@
 # Tracing environment must exist before LangChain imports initialize clients.
 from rag import config
 
+from functools import lru_cache
+
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 
+@lru_cache(maxsize=1)
 def get_embeddings() -> OpenAIEmbeddings:
     if not config.EMBED_MODEL:
         raise ValueError("Set EMBED_MODEL in .env; run uv run python check_setup.py to list IDs.")
@@ -21,6 +24,12 @@ def get_embeddings() -> OpenAIEmbeddings:
 
 
 def get_llm(fast: bool = False) -> ChatOpenAI:
+    """Reuse one lazy client per model role, regardless of argument spelling."""
+    return _get_llm(bool(fast))
+
+
+@lru_cache(maxsize=2)
+def _get_llm(fast: bool) -> ChatOpenAI:
     model = config.FAST_LLM_MODEL if fast else config.LLM_MODEL
     setting = "FAST_LLM_MODEL" if fast else "LLM_MODEL"
     if not model:

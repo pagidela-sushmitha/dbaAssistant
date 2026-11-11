@@ -1,0 +1,162 @@
+[
+  {
+    "id": "q01",
+    "question": "What SQLSTATE and exact error message indicate too many PostgreSQL connections?",
+    "category": "single-doc",
+    "expected_docs": ["runbook-connection-exhaustion", "postmortem-2026-06-pg-billing-connection-storm"],
+    "key_facts": ["53300", "sorry, too many clients already"],
+    "should_escalate": false
+  },
+  {
+    "id": "q02",
+    "question": "What pgBouncer command reloads config without dropping connections?",
+    "category": "single-doc",
+    "expected_docs": ["runbook-pgbouncer"],
+    "key_facts": ["reload", "connections"],
+    "should_escalate": false
+  },
+  {
+    "id": "q03",
+    "question": "What does SQLSTATE 40P01 mean, and what is the durable application fix?",
+    "category": "single-doc",
+    "expected_docs": ["runbook-deadlocks"],
+    "key_facts": ["deadlock", "lock ordering", "retries"],
+    "should_escalate": false
+  },
+  {
+    "id": "q04",
+    "question": "Replica lag has stayed above 300 seconds for 20 minutes. What command drains the replica, and what duration threshold applies?",
+    "category": "single-doc",
+    "expected_docs": ["runbook-replication-lag"],
+    "key_facts": ["300", "15", "nwctl pool drain"],
+    "should_escalate": false
+  },
+  {
+    "id": "q05",
+    "question": "Who approves production break-glass access, what command requests it, and how long does it last?",
+    "category": "single-doc",
+    "expected_docs": ["policy-production-access"],
+    "key_facts": ["on-call dba lead", "tsh request create --roles=db-breakglass", "4 hours"],
+    "should_escalate": false
+  },
+  {
+    "id": "q06",
+    "question": "What is the application statement_timeout, what SQLSTATE does it return, and which analytics role is exempt?",
+    "category": "single-doc",
+    "expected_docs": ["runbook-long-running-queries", "faq-app-teams"],
+    "key_facts": ["15", "57014", "analytics_ro"],
+    "should_escalate": false
+  },
+  {
+    "id": "q07",
+    "question": "How many days of PITR do normal production clusters and pg-analytics retain, and how many months are monthly full backups kept?",
+    "category": "single-doc",
+    "expected_docs": ["policy-backup-retention"],
+    "key_facts": ["35", "14", "13"],
+    "should_escalate": false
+  },
+  {
+    "id": "q08",
+    "question": "How do I request routine replica read-only access, what is the role name, and what is the fulfillment time?",
+    "category": "single-doc",
+    "expected_docs": ["policy-production-access", "faq-app-teams"],
+    "key_facts": ["db-replica-ro", "servicenow", "2 business days"],
+    "should_escalate": false
+  },
+  {
+    "id": "q09",
+    "question": "Which migration tool and PR label are required for schema changes, and what lock_timeout must migrations set?",
+    "category": "single-doc",
+    "expected_docs": ["policy-schema-change-standards", "faq-app-teams"],
+    "key_facts": ["flyway", "dba-review", "5s"],
+    "should_escalate": false
+  },
+  {
+    "id": "q10",
+    "question": "pg-billing is throwing 53300 after a deploy — what happened last time and what should I check?",
+    "category": "multi-doc",
+    "expected_docs": ["postmortem-2026-06-pg-billing-connection-storm", "runbook-connection-exhaustion", "runbook-pgbouncer"],
+    "key_facts": ["v4.2", "v4.1", "6432"],
+    "should_escalate": false
+  },
+  {
+    "id": "q11",
+    "question": "Can I refresh staging from a pg-orders backup, and what request and data-handling controls apply?",
+    "category": "multi-doc",
+    "expected_docs": ["policy-backup-retention", "policy-data-classification", "runbook-backup-restore-pitr"],
+    "key_facts": ["nw-mask", "restricted", "servicenow"],
+    "should_escalate": false
+  },
+  {
+    "id": "q12",
+    "question": "It's 2am and an inactive replication slot is filling the disk — what approvals do I need to drop it, and when is the emergency change ticket due?",
+    "category": "multi-doc",
+    "expected_docs": ["runbook-disk-full-wal", "policy-change-management"],
+    "key_facts": ["on-call dba lead", "engineering manager", "24"],
+    "should_escalate": false
+  },
+  {
+    "id": "q13",
+    "question": "A report is blocking replay and pg-orders replica lag has exceeded 300 seconds for 20 minutes. How do I drain it, cancel the query, and decide whether to terminate the session?",
+    "category": "multi-doc",
+    "expected_docs": ["runbook-replication-lag", "runbook-long-running-queries"],
+    "key_facts": ["nwctl pool drain", "pg_cancel_backend", "owner"],
+    "should_escalate": false
+  },
+  {
+    "id": "q14",
+    "question": "What is the RTO for an unplanned failover?",
+    "category": "conflict",
+    "expected_docs": ["runbook-patroni-failover"],
+    "key_facts": ["60", "seconds"],
+    "should_escalate": false
+  },
+  {
+    "id": "q15",
+    "question": "Tell me about the policies",
+    "category": "ambiguous",
+    "expected_docs": [],
+    "key_facts": [],
+    "should_escalate": false
+  },
+  {
+    "id": "q16",
+    "question": "What Redis eviction policy should we configure in production?",
+    "category": "should-escalate",
+    "expected_docs": [],
+    "key_facts": [],
+    "should_escalate": true
+  },
+  {
+    "id": "q17",
+    "question": "How should we choose a MongoDB sharding key for customer data?",
+    "category": "should-escalate",
+    "expected_docs": [],
+    "key_facts": [],
+    "should_escalate": true
+  },
+  {
+    "id": "q18",
+    "question": "How do I reset my VPN or laptop password?",
+    "category": "should-escalate",
+    "expected_docs": [],
+    "key_facts": [],
+    "should_escalate": true
+  },
+  {
+    "id": "q19",
+    "question": "What is the DBA team's 2027 budget?",
+    "category": "should-escalate",
+    "expected_docs": [],
+    "key_facts": [],
+    "should_escalate": true
+  },
+  {
+    "id": "q20",
+    "question": "What is PostgreSQL's default max_connections value?",
+    "category": "should-escalate",
+    "expected_docs": [],
+    "key_facts": [],
+    "should_escalate": true
+  }
+]

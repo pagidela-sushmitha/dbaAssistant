@@ -30,5 +30,5 @@ retrieve → grade (batched LLM rerank) → [generate | rewrite once → retriev
 - [x] Ingest (24 docs, 101 chunks, avg 473 chars)
 - [x] Hybrid retriever
 - [x] LangGraph pipeline + CLI
-- [ ] 20-question eval + report
+- [x] 20-question eval + report
 - [ ] Streamlit UI

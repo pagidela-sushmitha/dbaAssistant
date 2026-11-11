@@ -2,6 +2,7 @@
 
 import json
 import re
+from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
@@ -123,12 +124,18 @@ class HybridRetriever:
         ]
 
 
+@lru_cache(maxsize=1)
+def get_retriever() -> HybridRetriever:
+    """Lazily load the default index and build BM25 once per process."""
+    return HybridRetriever()
+
+
 class DBARetriever(BaseRetriever):
     """LangChain adapter; e.g. DBARetriever(mode='hybrid', k=8).invoke(query)."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    hybrid_retriever: HybridRetriever = Field(default_factory=HybridRetriever)
+    hybrid_retriever: HybridRetriever = Field(default_factory=get_retriever)
     mode: Mode = "hybrid"
     k: int = Field(default=8, gt=0)
 
@@ -151,7 +158,7 @@ class DBARetriever(BaseRetriever):
 
 
 def main() -> None:
-    retriever = HybridRetriever()
+    retriever = get_retriever()
     queries = [
         "what does 40P01 mean",
         "disk is full because of WAL",

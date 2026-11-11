@@ -35,9 +35,11 @@ class ScriptedModel:
     def __init__(self, *responses):
         self.responses = iter(responses)
         self.calls = []
+        self.options = []
 
-    def invoke(self, messages):
+    def invoke(self, messages, **kwargs):
         self.calls.append(messages)
+        self.options.append(kwargs)
         return SimpleNamespace(content=next(self.responses))
 
 
@@ -69,10 +71,44 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(result["grounded"])
         self.assertEqual(len(fast.calls), 2)  # One batch grade, one grounding call.
         self.assertEqual(len(main.calls), 1)
+        self.assertEqual(main.options, [{"max_tokens": 500}])
+        self.assertEqual(fast.options, [{"max_tokens": 300}, {"max_tokens": 150}])
         retriever.search.assert_called_once_with("How do I recover?", mode="hybrid", k=8)
         self.assertEqual(set(result["timings"]), {"retrieve", "grade", "generate", "check_grounding", "finalize"})
         self.assertTrue(all(t >= 0 for t in result["timings"].values()))
         self.assertGreaterEqual(result["total_ms"], sum(result["timings"].values()))
+
+    def test_conflicting_sources_prompt_requires_explicit_rules_and_stricter_recommendation(self):
+        docs = [candidate(1), candidate(2)]
+        docs[0]["text"] = (
+            "Disk runbook: dropping an inactive slot needs slot owner or on-call DBA lead approval."
+        )
+        docs[1]["text"] = (
+            "Change policy: emergency changes require both on-call DBA lead and engineering "
+            "manager approval. Complete the change ticket within 24 hours."
+        )
+        answer = (
+            "The disk runbook permits slot owner or on-call DBA lead approval [1], but the "
+            "change policy requires both on-call DBA lead and engineering manager approval "
+            "for emergency changes [2]. These rules conflict; follow the stricter requirement "
+            "and obtain both approvals [2]. Complete the ticket within 24 hours [2]."
+        )
+        result, _, _, main = self.run_pipeline(
+            [docs], [grades(3, 3), '{"grounded": true, "unsupported": ""}'], answer,
+        )
+        prompt = main.calls[0][0][1]
+        for rule in (
+            "explicitly state the", "conflict", "each rule with its own source citation",
+            "stricter requirement", "Do not silently merge conflicting rules",
+        ):
+            self.assertIn(rule, prompt)
+        evidence = main.calls[0][1][1]
+        for n, doc in enumerate(docs, 1):
+            self.assertIn(f"[{n}]", evidence)
+            self.assertIn(doc["text"], evidence)
+        self.assertEqual(result["answer"], answer)
+        self.assertEqual([c["n"] for c in result["citations"]], [1, 2])
+        self.assertFalse(result["escalated"])
 
     def test_cited_stale_document_warns_and_grade_two_is_medium(self):
         result, *_ = self.run_pipeline(
@@ -100,6 +136,10 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result["search_queries"], ["How do I recover?", "WAL disk capacity pg_replication_slots"])
         self.assertIn("rewrite", result["timings"])
         self.assertEqual(len(fast.calls), 4)
+        self.assertEqual(fast.options, [
+            {"max_tokens": 300}, {"max_tokens": 60},
+            {"max_tokens": 300}, {"max_tokens": 150},
+        ])
         self.assertEqual(result["confidence"], "high")
 
     def test_rewrite_is_one_line_with_at_most_twenty_unique_terms(self):
